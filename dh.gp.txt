@@ -1,0 +1,53 @@
+\\ Dh.gp- Diffie-Hellman Key Exchange
+
+\\ -----------------------------
+\\ 1️⃣ Setup: Image-derived integer
+\\ -----------------------------
+m = 65622713223228909102294502268927384508366703096364011889527404268932569058
+
+bits = 128   \\ smaller bit size for demo (adjustable)
+
+\\ -----------------------------
+\\ 2️⃣ Generate safe prime p
+\\ -----------------------------
+q = randomprime(2^(bits-2), 1)
+p = 2*q + 1
+while(!isprime(p), q = randomprime(2^(bits-2), 1); p = 2*q + 1)
+
+\\ -----------------------------
+\\ 3️⃣ Find generator g
+\\ -----------------------------
+g = 2
+while(Mod(g,p)^q != 1 || g == 1, g = g + 1)
+
+print("Safe prime p:", p)
+print("Generator g:", g)
+
+\\ -----------------------------
+\\ 4️⃣ Generate private keys
+\\ -----------------------------
+a = random(p-2) + 1
+b = random(p-2) + 1
+
+\\ -----------------------------
+\\ 5️⃣ Compute public keys
+\\ -----------------------------
+A_pub = lift(Mod(g,p)^a)
+B_pub = lift(Mod(g,p)^b)
+
+\\ -----------------------------
+\\ 6️⃣ Compute shared secrets
+\\ -----------------------------
+S_A = lift(Mod(B_pub,p)^a)
+S_B = lift(Mod(A_pub,p)^b)
+
+print("Shared secret A:", S_A)
+print("Shared secret B:", S_B)
+
+\\ -----------------------------
+\\ 7️⃣ Symmetric key from image hash
+\\ -----------------------------
+sym_key = m % p
+print("Symmetric key (m mod p):", sym_key)
+
+
