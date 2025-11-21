@@ -1,0 +1,77 @@
+\\ GamalElepticCurve.gp
+
+m = 65622713223228909102294502268927384508366703096364011889527404268932569058
+
+p_curve=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
+a=0
+b=7
+Gx=0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
+Gy=0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8
+n=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+
+E=ellinit([a,b],p_curve)
+G=[Mod(Gx,p_curve), Mod(Gy,p_curve)]
+
+d=random(n-1)+1
+Q=ellmul(E,G,d)
+print("Private key d:", d)
+print("Public key Qx:", lift(Q[1]))
+
+\\ Map message to point (try-and-increment)
+map_msg_to_point=(m_in)->{
+ t=m_in % p_curve
+ while(1,
+  x_try=Mod(t,p_curve)
+  rhs=(x_try^3 + a*x_try + b) % p_curve
+  y_try=sqrtmod(rhs,p_curve)
+  if(#y_try>0, return([lift(x_try), lift(y_try[1])]))
+  t++
+ )
+}
+Pm=map_msg_to_point(m)
+print("Message point Pm:", Pm)
+
+\\ EC-ElGamal encryption
+k=random(n-1)+1
+C1=ellmul(E,G,k)
+kQ=ellmul(E,Q,k)
+C2=elladd(E,Pm,kQ)
+print("Ciphertext C1,C2 x-coords:", lift(C1[1]), lift(C2[1]))
+
+\\ Decrypt
+dC1=ellmul(E,C1,d)
+Pm_prime=ellsub(E,C2,dC1)
+print("Recovered Pm' x:", lift(Pm_prime[1]))
+
+\\ ECDSA signing
+k_sig=random(n-1)+1
+P1=ellmul(E,G,k_sig)
+r=lift(P1[1]) % n
+if(r==0,error("r=0, pick another k"))
+s=(invmod(k_sig,n)*(m + d*r % n)) % n
+if(s==0,error("s=0, pick another k"))
+print("ECDSA signature r,s:", r,s)
+
+\\ Verification
+w=invmod(s,n)
+u1=(m*w) % n
+u2=(r*w) % n
+P=elladd(E,ellmul(E,G,u1),ellmul(E,Q,u2))
+xP=lift(P[1]) % n
+if(xP==r, print("ECDSA verification SUCCESS"), print("ECDSA verification FAILURE"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
