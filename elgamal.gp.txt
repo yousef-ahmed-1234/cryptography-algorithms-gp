@@ -1,0 +1,48 @@
+\\ elgamal.gp - ElGamal Finite Field Encryption & Digital Signature
+
+\\ -----------------------------
+\\ 1️⃣ Setup
+\\ -----------------------------
+m = 65622713223228909102294502268927384508366703096364011889527404268932569058
+
+p = 3613777588465368100257026955561349407914189175085796694100267573368069542097855559329235251994287470425465642656616341031754663978638375230845335967454263
+g = 2
+
+\\ Private key
+x = random(p-2) + 1
+
+\\ Public key
+y = lift(Mod(g,p)^x)
+print("Public key y:", y)
+
+\\ -----------------------------
+\\ 2️⃣ Encryption
+\\ -----------------------------
+k = random(p-2) + 1  \\ ephemeral key
+c1 = lift(Mod(g,p)^k)
+c2 = lift(Mod(m,p) * Mod(y,p)^k)
+print("Ciphertext c1,c2:", c1, ",", c2)
+
+\\ -----------------------------
+\\ 3️⃣ Decryption (division-based)
+\\ -----------------------------
+Mprime = lift(Mod(c2,p) / (Mod(c1,p)^x))
+if(Mprime == m, print("Decryption successful!"), print("Decryption failed!"))
+
+\\ -----------------------------
+\\ 4️⃣ Digital Signature
+\\ -----------------------------
+k_sig = random(p-2) + 1
+while(gcd(k_sig, p-1) != 1, k_sig = random(p-2) + 1)  \\ ensure modular inverse exists
+
+r = lift(Mod(g,p)^k_sig)
+s = lift(Mod((m - x*r), p-1) / Mod(k_sig, p-1))
+print("Signature (r,s):", r, ",", s)
+
+\\ -----------------------------
+\\ 5️⃣ Signature Verification
+\\ -----------------------------
+lhs = lift(Mod(g,p)^m)
+rhs = lift(Mod(y,p)^r * Mod(r,p)^s)
+
+if(lhs == rhs, print("Signature verification SUCCESS!"), print("Signature verification FAILED!"))
