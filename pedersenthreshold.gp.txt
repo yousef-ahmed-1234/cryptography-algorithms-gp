@@ -1,0 +1,78 @@
+\\ PedersenThreshold.gp
+
+m = 65622713223228909102294502268927384508366703096364011889527404268932569058
+
+bits=512
+q=randomprime(2^(bits-2),1)
+p=2*q+1
+while(!isprime(p), q=randomprime(2^(bits-2),1); p=2*q+1)
+
+g=2
+while(Mod(g,p)^q!=1 || g==1, g++)
+h=g+1
+while(Mod(h,p)^q!=1 || h==1, h++)
+
+\\ Dealer secret
+a=random(q-1)+1
+a1=random(q-1)+1
+C0=lift(Mod(g,p)^a)
+C1=lift(Mod(g,p)^a1)
+
+\\ Shares
+f=(x)->(a + a1*x) % q
+shares=vector(3,i,f(i))
+print("Shares s1,s2,s3:", shares)
+
+\\ Verify shares
+verify_share=(i)->{
+ lhs=lift(Mod(g,p)^shares[i])
+ rhs=(C0*lift(Mod(C1,p)^i)) % p
+ return(lhs==rhs)
+}
+for(i=1,3, print("Player",i,"verify:",verify_share(i)))
+
+\\ Partial signatures
+H_of_m = m % q
+partials=vector(3,i,(shares[i]*H_of_m) % q)
+print("Partial signatures p_i:",partials)
+
+\\ Lagrange coefficients
+lagrange_coeff=(i,S)->{
+ num=1; den=1;
+ for(j=1,#S,
+  if(S[j]==i,next)
+  num=(num*(-S[j])) % q
+  den=(den*(i-S[j])) % q
+ )
+ lambda=(num*invmod(den,q)) % q
+ return(lambda)
+}
+
+Sset=[1,2]
+l1=lagrange_coeff(1,Sset)
+l2=lagrange_coeff(2,Sset)
+Sagg=(partials[1]*l1 + partials[2]*l2) % q
+print("Aggregated signature S:",Sagg)
+
+\\ Verification
+lhs=lift(Mod(g,p)^Sagg)
+rhs=lift(Mod(C0,p)^H_of_m)
+if(lhs==rhs, print("Threshold signature verification SUCCESS"), print("FAILURE"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
